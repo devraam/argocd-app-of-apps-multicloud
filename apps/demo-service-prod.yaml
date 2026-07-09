@@ -1,0 +1,26 @@
+# Child Application: demo-service in PROD (EKS / AWS).
+# Same chart + version model as dev; promotion happens via reviewed PR.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-service-prod
+  namespace: argocd
+spec:
+  project: platform
+  sources:
+    - repoURL: myregistry.azurecr.io
+      chart: demo-service
+      targetRevision: 1.4.0                   # prod trails dev until promoted
+      helm:
+        valueFiles:
+          - $values/environments/prod/values.yaml
+    - repoURL: https://github.com/devraam/argocd-app-of-apps-multicloud.git
+      targetRevision: main
+      ref: values
+  destination:
+    name: eks-prod                            # EKS cluster (AWS) — multicloud resilience
+    namespace: demo-service
+  syncPolicy:
+    automated:
+      prune: false                            # prod prunes require manual approval
+      selfHeal: true
