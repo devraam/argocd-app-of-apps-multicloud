@@ -1,0 +1,28 @@
+# Child Application: demo-service in DEV (AKS / Azure).
+# Chart is pulled as an OCI artifact from Azure Container Registry.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-service-dev
+  namespace: argocd
+spec:
+  project: platform
+  sources:
+    - repoURL: myregistry.azurecr.io          # OCI Helm chart source (sanitized)
+      chart: demo-service
+      targetRevision: 1.4.2                   # immutable chart version
+      helm:
+        valueFiles:
+          - $values/environments/dev/values.yaml
+    - repoURL: https://github.com/devraam/argocd-app-of-apps-multicloud.git
+      targetRevision: main
+      ref: values
+  destination:
+    name: aks-dev                             # AKS cluster (Azure)
+    namespace: demo-service
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
